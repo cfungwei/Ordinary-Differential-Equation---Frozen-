@@ -20,7 +20,7 @@ Mathematical Analysis
 ---
 We find the critical points of our 3 given equations by equating them to 0. Using Stability Analysis, we can identify the stability of the critical points based on their eigenvalues and find that points (6.99,4.73,9.07) is a stable spiral sink that matches the 3D plot of our ODE equations below.
 
-![3D phase plot](https://user-images.githubusercontent.com/97843966/154017054-3e003ce0-39aa-462f-8846-d3555ccc7e63.png)
+![3D Phase Plot-1](https://user-images.githubusercontent.com/97843966/154017934-3ed8d440-2d92-49ee-8a13-072cfbb85935.png)
 
 *Done in May 2021
 Credits: Ang Kian Hao, Julianne Thatcher Low, Loke Rui Xuan, Seng Swee Keng, Wisely Neo*
