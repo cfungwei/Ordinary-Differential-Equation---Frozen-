@@ -1,0 +1,128 @@
+library(psoptim)
+library(pso)
+library(deSolve)
+library(dplyr)
+library(ggplot2)
+library(phaseR)
+
+#==== main code ====
+At= c(8,8,8,6,7,3,7,6,6,10,8)
+Et= c(8,6,5,4,6,4.5,4.5,3.5,3,10,8)
+Ft= c(0,2,5.5,7,7.5,8.5,8.5,9,10,4,1)
+Time = c(0,5,8,9,20,26,35,52,62,87,90) #minutes
+
+observed_data <- data.frame (t= Time , E=Et , A= At)
+
+plot (Time , Et , ylim = c( 0 ,10) ,col = " Blue ", main
+      = "Elsa 's closeness to Anna ")
+plot (Time , At , ylim =c( 0 ,10) , col = " red ", main
+      = "Anna 's closeness to Elsa ")
+plot (Time , Ft , ylim =c( 0 ,10) , col = " black ", main
+      = "Elsa's fear of her powers ")
+
+times <- seq (0 ,90, by =1)
+state <- c(A=8 ,E=8 ,f=0)
+
+fitness = function(x){
+  a1 = x[1]
+  a2 = x[2]
+  a3 = x[3]
+  LA = x[4]
+  
+  b1 = x[5]
+  b2 = x[6]
+  b3 = x[7]
+  b4 = x[8]
+  b5 = x[9]
+  LE = x[10]
+  
+  d1 = x[11]
+  d2 = x[12]
+  
+  dA_dt = -a1*At + a2*(Et-a3) + LA 
+  dE_dt = -b1*Et + b2*(At-b3)*(At-b4) + LE/(1+b5*Ft) 
+  dF_dt = d1*Ft + d2*Et
+  
+  value = sum((At - dA_dt)^2 + (Et - dE_dt)^2 + (Ft - dF_dt)^2)
+  return(value)
+}
+RHS <- function (t, state, parameters) {
+  with (as.list (c(state , parameters )), 
+        {dA_dt = -a1*At + a2*(Et-a3) + LA 
+        dE_dt = -b1*Et + b2*(At-b3)*(At-b4) + LE/(1+b5*Ft) 
+        dF_dt = d1*Ft + d2*Et
+        list(c(dA_dt ,dE_dt ,dF_dt))
+        })
+}
+
+set.seed (2022)
+pso_outcome <- pso::psoptim(rep(NA ,12), fitness, lower = rep(0.01,12) , upper = rep (10 ,12),control = c(maxit = 2000))
+pso_outcome
+
+#parms_test3 = c(a1 =0.01,a2 = 0.60426527,a3= 7.23244468,LA= 8.00698973,b1= 0.01000000,b2= 0.22129092,
+#                b3=5.09858909, b4= 5.09859075,b5=0.08311176,LE=6.08693498,d1= 0.99380705,d2= 0.01000000)
+
+parms_test3sf= c(a1 = 0.01,a2=0.604,a3=7.23,LA=8.01,b1=0.01,b2=0.221,b3=5.10,b4=5.10,b5=0.0831,LE=6.09,
+                  d1=0.994,d2=0.01)
+
+out_test3 = data.frame(ode(y=c(At,Et,Ft), times = Time, func = RHS, parms=parms_test3sf))
+out_test3
+
+RHS(t,state,parms_test3sf)
+
+out = as.data.frame(out_test3)
+out
+observed_data=as.data.frame(observed_data)
+observed_data
+
+ggplot(data = observed_data)+
+  geom_point(aes(x=Time, y = At))+
+  geom_smooth(data = out, aes(x=time, y =At), colour = 'red')
+
+ggplot(data = observed_data)+
+  geom_point(aes(x=Time, y = Et))+
+  geom_smooth(data = out, aes(x=time, y =Et), colour = 'blue')
+
+ggplot(data = observed_data)+
+  geom_point(aes(x=Time, y = Ft))+
+  geom_smooth(data = out, aes(x=time, y =Ft), colour = 'green')
+
+#phase plot
+equation = function(t,y,x){
+  At = y[1]
+  Et = y[2]
+  Ft = y[3]
+  
+  a1 = x[1]
+  a2 = x[2]
+  a3 = x[3]
+  LA = x[4]
+  
+  b1 = x[5]
+  b2 = x[6]
+  b3 = x[7]
+  b4 = x[8]
+  b5 = x[9]
+  LE = x[10]
+  
+  d1 = x[11]
+  d2 = x[12]
+  
+  dy = numeric(3)
+  dy[1] = -a1*At + a2*(Et-a3) + LA 
+  dy[2] = -b1*Et + b2*(At-b3)*(At-b4) + LE/(1+b5*Ft) 
+  dy[3] = d1*Ft + d2*Et
+  
+  list(dy)
+}
+
+phaseplot.flowField = flowField(equation,xlim=c(-10,10),ylim=c(-10,10),
+                      parameters = parms_test3sf,points=20,add = FALSE)
+grid()
+phaseplot.nullclines <-nullclines(equation,xlim=c(-10,10),ylim=c(-10,10),
+               parameters = parms_test3sf, points = 500)
+y0 <- matrix(c(1, 2, 2, 2, 3, 4), ncol = 2, nrow = 3, byrow = TRUE)
+
+phaseplot.trajectory=trajectory(equation, y0 = y0, t.end = 10,
+               + parameters = parms_test3sf, colour = rep("black", 3))
+
